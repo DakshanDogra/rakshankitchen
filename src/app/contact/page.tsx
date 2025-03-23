@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import emailjs from '@emailjs/browser';
 
 const services = [
@@ -15,12 +15,8 @@ const services = [
   { value: 'material', label: 'Material Selection' },
 ];
 
-export default function ContactPage() {
-  const { ref: sectionRef, inView } = useInView({
-    triggerOnce: true,
-    threshold: 0.1
-  });
-
+// Create a separate component for the form content
+const ContactForm = () => {
   const searchParams = useSearchParams();
   const [selectedService, setSelectedService] = useState('');
   const [message, setMessage] = useState('');
@@ -100,6 +96,102 @@ export default function ContactPage() {
   };
 
   return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div>
+        <label htmlFor="name" className="block text-sm font-medium mb-2">
+          Name*
+        </label>
+        <input
+          type="text"
+          id="name"
+          className="w-full px-4 py-3 border border-gray-200 rounded-none focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200 hover:border-primary"
+          placeholder="Enter Your Name"
+          required
+        />
+      </div>
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium mb-2">
+          Email*
+        </label>
+        <input
+          type="email"
+          id="email"
+          className="w-full px-4 py-3 border border-gray-200 rounded-none focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200 hover:border-primary"
+          placeholder="Enter Your Email"
+          required
+        />
+      </div>
+      <div>
+        <label htmlFor="phone" className="block text-sm font-medium mb-2">
+          Phone Number*
+        </label>
+        <input
+          type="tel"
+          id="phone"
+          className="w-full px-4 py-3 border border-gray-200 rounded-none focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200 hover:border-primary"
+          placeholder="Enter Your Phone Number"
+          pattern="[0-9]{10}"
+          title="Please enter a valid 10-digit phone number"
+          required
+        />
+      </div>
+      <div>
+        <label htmlFor="service" className="block text-sm font-medium mb-2">
+          Service*
+        </label>
+        <select
+          id="service"
+          value={selectedService}
+          onChange={(e) => {
+            setSelectedService(e.target.value);
+            const serviceName = services.find(s => s.value === e.target.value)?.label || '';
+            if (serviceName) {
+              setMessage(`I'm interested in your ${serviceName} service. Please provide more information.`);
+            }
+          }}
+          className="w-full px-4 py-3 border border-gray-200 rounded-none focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200 hover:border-primary"
+          required
+        >
+          <option value="">Select a Service</option>
+          {services.map((service) => (
+            <option key={service.value} value={service.value}>
+              {service.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label htmlFor="message" className="block text-sm font-medium mb-2">
+          Message
+        </label>
+        <textarea
+          id="message"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          rows={4}
+          className="w-full px-4 py-3 border border-gray-200 rounded-none focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200 hover:border-primary"
+          placeholder="Your message..."
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full py-3 bg-[#C9A66B] text-white hover:bg-[#B08B57] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isSubmitting ? 'Sending...' : 'Send Message'}
+      </button>
+    </form>
+  );
+};
+
+// Main ContactPage component
+export default function ContactPage() {
+  const { ref: sectionRef, inView } = useInView({
+    triggerOnce: true,
+    threshold: 0.1
+  });
+
+  return (
     <main className="min-h-screen">
       {/* Hero Section with Background */}
       <div className="relative h-[400px] bg-black/60 overflow-hidden">
@@ -143,109 +235,9 @@ export default function ContactPage() {
               We will be delighted to answer any queries or questions you may have about our kitchen design services by sending this form.
             </p>
 
-            {submitStatus.type && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`p-4 mb-6 rounded ${
-                  submitStatus.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-                }`}
-              >
-                {submitStatus.message}
-              </motion.div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-2">
-                  Name*
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-none focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200 hover:border-primary"
-                  placeholder="Enter Your Name"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium mb-2">
-                  Email*
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-none focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200 hover:border-primary"
-                  placeholder="Enter Your Email"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium mb-2">
-                  Phone Number*
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-none focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200 hover:border-primary"
-                  placeholder="Enter Your Phone Number"
-                  pattern="[0-9]{10}"
-                  title="Please enter a valid 10-digit phone number"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="service" className="block text-sm font-medium mb-2">
-                  Service*
-                </label>
-                <select
-                  id="service"
-                  value={selectedService}
-                  onChange={(e) => {
-                    setSelectedService(e.target.value);
-                    const serviceName = services.find(s => s.value === e.target.value)?.label || '';
-                    if (serviceName) {
-                      setMessage(`I'm interested in your ${serviceName} service. Please provide more information.`);
-                    }
-                  }}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-none focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200 hover:border-primary"
-                  required
-                >
-                  <option value="">Select a Service</option>
-                  {services.map((service) => (
-                    <option key={service.value} value={service.value}>
-                      {service.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium mb-2">
-                  Message
-                </label>
-                <textarea
-                  id="message"
-                  rows={6}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-none focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200 hover:border-primary resize-none"
-                  placeholder="Enter Your Message"
-                ></textarea>
-              </div>
-              <motion.button
-                type="submit"
-                disabled={isSubmitting}
-                whileTap={{ scale: 0.98 }}
-                className={`w-full bg-primary text-white py-4 px-8 hover:bg-primary-hover transition-all duration-200 relative overflow-hidden group ${
-                  isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
-                }`}
-              >
-                <span className="relative z-10">
-                  {isSubmitting ? 'SENDING...' : 'SUBMIT'}
-                </span>
-                <div className="absolute inset-0 w-0 bg-white/20 transition-all duration-300 group-hover:w-full" />
-              </motion.button>
-            </form>
+            <Suspense fallback={<div>Loading...</div>}>
+              <ContactForm />
+            </Suspense>
           </motion.div>
         </div>
       </section>
@@ -256,15 +248,8 @@ export default function ContactPage() {
         whileInView={{ opacity: 1 }}
         transition={{ duration: 1 }}
         viewport={{ once: true }}
-        className="py-20 bg-secondary relative overflow-hidden"
+        className="py-20 bg-black relative overflow-hidden"
       >
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C9A66B' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
-        </div>
-
         <div className="container relative">
           <motion.div
             initial={{ y: 50, opacity: 0 }}
@@ -305,39 +290,38 @@ export default function ContactPage() {
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
-        className="bg-secondary text-white py-16 relative overflow-hidden"
+        className="bg-black text-white py-16 relative overflow-hidden"
       >
         {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C9A66B' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#C9A66B]/20 to-transparent" />
+          <div className="grid grid-cols-6 gap-8 transform rotate-12 scale-150">
+            {[...Array(24)].map((_, i) => (
+              <div key={i} className="h-32 bg-[#C9A66B]/10 rounded-full blur-2xl" />
+            ))}
+          </div>
         </div>
 
         <div className="container relative">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Brand */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+            {/* Brand Section */}
             <div>
-              <motion.h3 
-                className="text-3xl font-serif mb-4 text-[#C9A66B] relative group"
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.2 }}
-              >
-                RAKSHAN KITCHEN
-                <motion.span 
-                  className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#C9A66B] group-hover:w-full transition-all duration-300"
-                  initial={{ width: 0 }}
-                  whileHover={{ width: "100%" }}
-                />
-              </motion.h3>
-              <p className="text-gray-400">
-                Creating exceptional kitchen spaces that inspire and delight.
+              <h3 className="text-2xl font-serif mb-4 text-[#C9A66B]">RAKSHAN KITCHEN</h3>
+              <p className="text-gray-400 mb-6">
+                Crafting luxury kitchen spaces with precision and passion since 1999.
               </p>
+              <div className="flex space-x-4">
+                <a href="https://www.facebook.com/rakshankitchen" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#C9A66B] transition-colors">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/>
+                  </svg>
+                </a>
+              </div>
             </div>
 
             {/* Quick Links */}
             <div>
-              <h4 className="text-lg font-serif mb-4 text-[#C9A66B]">Quick Links</h4>
+              <h4 className="text-lg font-medium mb-4">Quick Links</h4>
               <ul className="space-y-2">
                 <li>
                   <Link href="/" className="text-gray-400 hover:text-[#C9A66B] transition-colors">
@@ -346,17 +330,12 @@ export default function ContactPage() {
                 </li>
                 <li>
                   <Link href="/about" className="text-gray-400 hover:text-[#C9A66B] transition-colors">
-                    About
+                    About Us
                   </Link>
                 </li>
                 <li>
-                  <Link href="/services" className="text-gray-400 hover:text-[#C9A66B] transition-colors">
-                    Services
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/portfolio" className="text-gray-400 hover:text-[#C9A66B] transition-colors">
-                    Portfolio
+                  <Link href="/contact" className="text-gray-400 hover:text-[#C9A66B] transition-colors">
+                    Contact
                   </Link>
                 </li>
               </ul>
@@ -364,53 +343,40 @@ export default function ContactPage() {
 
             {/* Contact Info */}
             <div>
-              <h4 className="text-lg font-serif mb-4 text-[#C9A66B]">Contact Info</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-[#C9A66B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Vatika Kunj, Gurgaon, Haryana
+              <h4 className="text-lg font-medium mb-4">Contact Us</h4>
+              <ul className="space-y-2">
+                <li className="text-gray-400">
+                  <a href="tel:+919310123565" className="hover:text-[#C9A66B] transition-colors">
+                    +91 9310123565
+                  </a>
                 </li>
-                <li className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-[#C9A66B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                  +91 9310123565
+                <li className="text-gray-400">
+                  <a href="mailto:rakshankitchenlimited@gmail.com" className="hover:text-[#C9A66B] transition-colors">
+                    rakshankitchenlimited@gmail.com
+                  </a>
                 </li>
-                <li className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-[#C9A66B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  rakshankitchenlimited@gmail.com
+                <li className="text-gray-400">
+                  <a href="https://maps.google.com/?q=RAKSHAN+KITCHEN+AND+LIGHT,+Sector+7,+Rohini,+Delhi,+110085" target="_blank" rel="noopener noreferrer" className="hover:text-[#C9A66B] transition-colors">
+                    Sector 7, Rohini, Delhi, 110085
+                  </a>
                 </li>
               </ul>
             </div>
 
-            {/* Social Links */}
+            {/* Business Hours */}
             <div>
-              <h4 className="text-lg font-serif mb-4 text-[#C9A66B]">Follow Us</h4>
-              <div className="flex space-x-4">
-                <motion.a 
-                  href="https://www.facebook.com/rakshankitchen/" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="text-gray-400 hover:text-[#C9A66B] transition-colors"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <span className="sr-only">Facebook</span>
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
-                  </svg>
-                </motion.a>
-              </div>
+              <h4 className="text-lg font-medium mb-4">Business Hours</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li>Monday - Saturday</li>
+                <li>10:00 AM - 8:00 PM</li>
+                <li>Sunday: Closed</li>
+              </ul>
             </div>
           </div>
 
+          {/* Copyright */}
           <div className="mt-12 pt-8 border-t border-gray-800 text-center text-gray-400">
-            <p>&copy; {new Date().getFullYear()} RAKSHAN KITCHEN. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} RAKSHAN KITCHEN. All rights reserved.</p>
           </div>
         </div>
       </motion.footer>
